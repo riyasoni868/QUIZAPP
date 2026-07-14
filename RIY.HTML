@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudySync - Advanced Mega Quiz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Animate.css for awesome result animations -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <style>
+        .fade-in { animation: fadeIn 0.4s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .confetti { position: absolute; width: 10px; height: 10px; background-color: #f29339; border-radius: 50%; animation: confettiFall 3s linear infinite; z-index: 10; }
+        @keyframes confettiFall { 0% { transform: translateY(-10px) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(360deg); opacity: 0; } }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+
+    <!-- Confetti Container for Results -->
+    <div id="confetti-wrapper" class="absolute inset-0 pointer-events-none hidden"></div>
+
+    <!-- Main Card -->
+    <div class="bg-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl border border-slate-700 overflow-hidden relative z-20 transition-all">
+        
+        <!-- Header Strip -->
+        <div class="bg-gradient-to-r from-indigo-600 to-violet-600 p-6 text-white flex justify-between items-center">
+            <h1 class="text-2xl font-bold tracking-wide flex items-center gap-2">
+                <i class="fas fa-graduation-cap text-yellow-400"></i> StudySync Quiz
+            </h1>
+            <div id="quiz-badge" class="hidden text-sm bg-black/30 px-3 py-1 rounded-full font-medium"></div>
+        </div>
+
+        <!-- Top Progress Bar -->
+        <div id="progress-container" class="w-full bg-slate-700 h-2 hidden">
+            <div id="progress-bar" class="bg-emerald-500 h-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+
+        <!-- Dynamic Main Content Wrapper -->
+        <div class="p-6 sm:p-10 min-h-[400px] flex flex-col justify-between">
+            
+            <!-- SCREEN 1: CHOOSE SECTION -->
+            <div id="screen-category" class="fade-in space-y-6">
+                <div class="text-center">
+                    <h2 class="text-2xl font-extrabold text-white mb-2">Select Quiz Topic</h2>
+                    <p class="text-slate-400">Choose a section below. Each section contains 20 questions.</p>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+                    <button onclick="selectCategory('HTML')" class="flex items-center gap-4 bg-slate-700 hover:bg-orange-600/20 hover:border-orange-500 border-2 border-slate-600 p-5 rounded-xl transition text-left group">
+                        <i class="fab fa-html5 text-orange-500 text-4xl group-hover:scale-110 transition-transform"></i>
+                        <div><h4 class="font-bold text-lg">HTML5</h4><p class="text-xs text-slate-400">Structure & Tags</p></div>
+                    </button>
+                    <button onclick="selectCategory('CSS')" class="flex items-center gap-4 bg-slate-700 hover:bg-blue-600/20 hover:border-blue-500 border-2 border-slate-600 p-5 rounded-xl transition text-left group">
+                        <i class="fab fa-css3-alt text-blue-400 text-4xl group-hover:scale-110 transition-transform"></i>
+                        <div><h4 class="font-bold text-lg">CSS3 Layouts</h4><p class="text-xs text-slate-400">Styling & Flexbox</p></div>
+                    </button>
+                    <button onclick="selectCategory('JAVA')" class="flex items-center gap-4 bg-slate-700 hover:bg-red-600/20 hover:border-red-500 border-2 border-slate-600 p-5 rounded-xl transition text-left group">
+                        <i class="fab fa-java text-red-500 text-4xl group-hover:scale-110 transition-transform"></i>
+                        <div><h4 class="font-bold text-lg">JAVA Core</h4><p class="text-xs text-slate-400">OOPs & Logic</p></div>
+                    </button>
+                    <button onclick="selectCategory('REACT')" class="flex items-center gap-4 bg-slate-700 hover:bg-cyan-600/20 hover:border-cyan-500 border-2 border-slate-600 p-5 rounded-xl transition text-left group">
+                        <i class="fab fa-react text-cyan-400 text-4xl group-hover:scale-110 transition-transform"></i>
+                        <div><h4 class="font-bold text-lg">React Framework</h4><p class="text-xs text-slate-400">Hooks & States</p></div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- SCREEN 2: LOGIN FORM -->
+            <div id="screen-login" class="hidden fade-in space-y-6 max-w-md mx-auto w-full">
+                <div class="text-center">
+                    <i class="fas fa-user-lock text-indigo-400 text-4xl mb-2"></i>
+                    <h2 class="text-2xl font-bold text-white">Student Registration</h2>
+                    <p class="text-slate-400 text-sm">Please fill in details to unlock your verification panel.</p>
+                </div>
+                <form id="login-form" class="space-y-4 pt-2" onsubmit="handleLogin(event)">
+                    <div>
+                        <label class="block text-sm font-medium mb-1 text-slate-300">Full Name</label>
+                        <input type="text" id="user-name" required class="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 focus:border-indigo-500 focus:outline-none text-white placeholder-slate-400" placeholder="Enter full name...">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1 text-slate-300">WhatsApp Number</label>
+                        <input type="tel" id="user-phone" required class="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 focus:border-indigo-500 focus:outline-none text-white placeholder-slate-400" placeholder="e.g., +91 9876543210">
+                    </div>
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg font-bold transition shadow-lg mt-4">
+                        Start Test <i class="fas fa-play text-xs ml-1"></i>
+                    </button>
+                </form>
+            </div>
+
+            <!-- SCREEN 3: ACTIVE TEST TRUCKER -->
+            <div id="screen-quiz" class="hidden fade-in">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 id="question-text" class="text-xl font-bold text-white leading-snug pr-4">
+                        Loading...
+                    </h3>
+                </div>
+                <div id="options-box" class="space-y-3">
+                    <!-- Options buttons mapped -->
+                </div>
+            </div>
+
+            <!-- SCREEN 4: ANNOTATION RESULT CARD -->
+            <div id="screen-result" class="hidden text-center max-w-md mx-auto w-full animate__animated animate__zoomIn">
+                <div class="text-amber-400 text-7xl mb-4 drop-shadow-md">
+                    <i class="fas fa-medal animate__animated animate__bounceInDown animate__delay-1s"></i>
+                </div>
+                <h2 class="text-3xl font-black text-white mb-1">Test Performance</h2>
+                <p id="result-user-info" class="text-indigo-400 font-semibold text-lg mb-6"></p>
+                
+                <div class="inline-block bg-slate-700/60 border border-slate-600 px-10 py-6 rounded-2xl mb-6 shadow-inner">
+                    <div class="text-sm text-slate-400 uppercase tracking-wider font-bold mb-1">Your Score</div>
+                    <div class="text-5xl font-black text-emerald-400"><span id="score-earned">0</span><span class="text-slate-400 text-2xl"> / 20</span></div>
+                </div>
+
+                <p id="score-feedback" class="text-slate-300 text-sm font-medium mb-8 px-4"></p>
+                
+                <button onclick="resetApp()" class="w-full bg-slate-700 hover:bg-slate-600 border border-slate-600 py-3 rounded-xl font-bold transition">
+                    <i class="fas fa-home mr-2"></i> Go Back to Home
+                </button>
+            </div>
+
+            <!-- Global Action Controls Drawer Area footer -->
+            <div id="quiz-footer" class="mt-8 border-t border-slate-700 pt-4 flex justify-between items-center hidden">
+                <span id="tracker-counter" class="text-sm text-slate-400 font-medium">Question 1/20</span>
+                <button id="next-btn" disabled onclick="navigateNext()" class="bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-2">
+                    Next <i class="fas fa-arrow-right text-xs"></i>
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Mega Data Question Engine Module Script -->
+    <script>
+        const megaQuestionBank = {
+            HTML: [
+                { q: "What does HTML stand for?", o: ["Hyper Text Markup Language", "High Text Markup Language", "Hyper Tabular Machine Language", "Hyperlink Text Management Language"], c: 0 },
+                { q: "Who is making the Web standards?", o: ["Mozilla", "Google", "The World Wide Web Consortium (W3C)", "Microsoft"], c: 2 },
+                { q: "Choose the correct HTML element for the largest heading:", o: ["&lt;heading&gt;", "&lt;h6&gt;", "&lt;h1&gt;", "&lt;head&gt;"], c: 2 },
+                { q: "What is the correct HTML element for inserting a line break?", o: ["&lt;break&gt;", "&lt;lb&gt;", "&lt;br&gt;", "&lt;hr&gt;"], c: 2 },
+                { q: "Choose the correct HTML element to define important text:", o: ["&lt;important&gt;", "&lt;strong&gt;", "&lt;i&gt;", "&lt;b&gt;"], c: 1 },
+                { q: "Which character is used to indicate an end tag?", o: ["*", "/", "^", "&lt;"], c: 1 },
+                { q: "How can you open a link in a new tab/browser window?", o: ["target='_new'", "target='_blank'", "new='window'", "href='newtab'"], c: 1 },
+                { q: "Which of these elements are all &lt;table&gt; elements?", o: ["&lt;table&gt;&lt;head&gt;&lt;tfoot&gt;", "&lt;table&gt;&lt;tr&gt;&lt;td&gt;", "&lt;thead&gt;&lt;body&gt;&lt;tr&gt;", "&lt;table&gt;&lt;tr&gt;&lt;tt&gt;"], c: 1 },
+                { q: "Inline elements are normally displayed without starting a new line.", o: ["True", "False"], c: 0 },
+                { q: "How can you make a numbered list?", o: ["&lt;list&gt;", "&lt;ul&gt;", "&lt;ol&gt;", "&lt;dl&gt;"], c: 2 },
+                { q: "How can you make a bulleted list?", o: ["&lt;list&gt;", "&lt;ol&gt;", "&lt;ul&gt;", "&lt;dl&gt;"], c: 2 },
+                { q: "What is the correct HTML for making a checkbox?", o: ["&lt;input type='check'&gt;", "&lt;check&gt;", "&lt;checkbox&gt;", "&lt;input type='checkbox'&gt;"], c: 3 },
+                { q: "What is the correct HTML for making a text input area?", o: ["&lt;input type='textbox'&gt;", "&lt;input type='text'&gt;", "&lt;textinput&gt;", "&lt;input type='field'&gt;"], c: 1 },
+                { q: "Which HTML element is used to specify a footer for a document or section?", o: ["&lt;bottom&gt;", "&lt;section-footer&gt;", "&lt;footer&gt;", "&lt;foot&gt;"], c: 2 },
+                { q: "What is the correct HTML element for playing video files?", o: ["&lt;movie&gt;", "&lt;media&gt;", "&lt;video&gt;", "&lt;playvideo&gt;"], c: 2 },
+                { q: "What is the correct HTML element for playing audio files?", o: ["&lt;sound&gt;", "&lt;music&gt;", "&lt;audio&gt;", "&lt;play&gt;"], c: 2 },
+                { q: "The HTML global attribute 'contenteditable' is used to:", o: ["Specifies a context menu", "Specify whether the content is editable or not", "Update client rows database", "Return form items"], c: 1 },
+                { q: "Which HTML element is used to display a scalar measurement within a known range?", o: ["&lt;range&gt;", "&lt;gauge&gt;", "&lt;meter&gt;", "&lt;measure&gt;"], c: 2 },
+                { q: "In HTML, which attribute specifies an alternate text for an image, if the image cannot be displayed?", o: ["longdesc", "title", "src", "alt"], c: 3 },
+                { q: "Which doctype is correct for HTML5?", o: ["&lt;!DOCTYPE html&gt;", "&lt;!DOCTYPE HTML5&gt;", "&lt;!DOCTYPE HTML PUBLIC...&gt;", "&lt;!doctype system&gt;"], c: 0 }
+            ],
+            CSS: [
+                { q: "What does CSS stand for?", o: ["Computer Style Sheets", "Cascading Style Sheets", "Creative Style Sheets", "Colorful Style Sheets"], c: 1 },
+                { q: "Which HTML tag is used to define an internal style sheet?", o: ["&lt;css&gt;", "&lt;style&gt;", "&lt;script&gt;", "&lt;link&gt;"], c: 1 },
+                { q: "Which HTML attribute is used to define inline styles?", o: ["class", "styles", "font", "style"], c: 3 },
+                { q: "Which is the correct CSS syntax?", o: ["body {color: black;}", "{body;color:black;}", "body:color=black;", "{body:color=black;}"], c: 0 },
+                { q: "How do you insert a comment in a CSS file?", o: ["' this is a comment", "/* this is a comment */", "// this is a comment", "// this is a comment //"], c: 1 },
+                { q: "Which property is used to change the background color?", o: ["color", "bgcolor", "background-color", "bg"], c: 2 },
+                { q: "How do you add a background color for all &lt;h1&gt; elements?", o: ["h1.all {background-color:#FFF;}", "h1 {background-color:#FFF;}", "all.h1 {background-color:#FFF;}", "h1:bg-color=#FFF;"], c: 1 },
+                { q: "Which CSS property is used to change the text color of an element?", o: ["text-color", "color", "fgcolor", "font-color"], c: 1 },
+                { q: "Which CSS property controls the text size?", o: ["font-size", "text-size", "font-style", "size"], c: 0 },
+                { q: "What is the correct CSS syntax for making all the &lt;p&gt; elements bold?", o: ["p {font-weight:bold;}", "p {text-size:bold;}", "p {font:bold;}", "p {style:bold;}"], c: 0 },
+                { q: "How do you display hyperlinks without an underline?", o: ["a {decoration:no-underline;}", "a {text-decoration:none;}", "a {underline:none;}", "a {text-decoration:no-underline;}"], c: 1 },
+                { q: "How do you make each word in a text start with a capital letter?", o: ["text-transform:capitalize", "text-transform:uppercase", "You can't do that with CSS", "font-style:capitalize"], c: 0 },
+                { q: "Which font property changes the typeface style of text?", o: ["font-family", "font-type", "font-weight", "text-font"], c: 0 },
+                { q: "To set a boundary margin space around an element externally, which property works?", o: ["padding", "margin", "border-width", "gap"], c: 1 },
+                { q: "To add cushion padding space inside an element borders internally, you use:", o: ["margin", "inset", "padding", "border-padding"], c: 2 },
+                { q: "How do you select an element with id 'demo' in CSS?", o: [".demo", "#demo", "*demo", "demo"], c: 1 },
+                { q: "How do you select elements with class name 'test' in CSS?", o: ["#test", "test", ".test", "*test"], c: 2 },
+                { q: "What is the default value of the position property?", o: ["relative", "absolute", "fixed", "static"], c: 3 },
+                { q: "Which property configurations trigger Flexbox layout architectures?", o: ["display: flexbox;", "display: flex;", "box-model: flex;", "layout: dynamic;"], c: 1 },
+                { q: "Which CSS property changes the stack alignment sequence order of elements?", o: ["weight", "x-index", "z-index", "alpha-index"], c: 2 }
+            ],
+            JAVA: [
+                { q: "Which company originally invented Java?", o: ["Microsoft", "Oracle", "Sun Microsystems", "Google"], c: 2 },
+                { q: "Which data type is used to create a variable that should store text?", o: ["String", "txt", "myString", "char"], c: 0 },
+                { q: "How do you create a variable with the numeric value 5?", o: ["num x = 5;", "float x = 5;", "int x = 5;", "x = 5;"], c: 2 },
+                { q: "How do you print text to the output screen console in Java?", o: ["System.out.println()", "print()", "Console.WriteLine()", "response.write()"], c: 0 },
+                { q: "Java is short for JavaScript.", o: ["True", "False"], c: 1 },
+                { q: "How do you create a method in Java?", o: ["myMethod()", "void myMethod()", "method.myMethod()", "create.myMethod()"], c: 1 },
+                { q: "What is the correct statement to create an object named 'myObj' of class 'MyClass'?", o: ["class myObj = new MyClass();", "MyClass myObj = new MyClass();", "new myObj = MyClass();", "object myObj = MyClass();"], c: 1 },
+                { q: "Which operator is used to compare two values for absolute equality?", o: ["=", "==", "===;", "match"], c: 1 },
+                { q: "Which data type is commonly used to hold true/false state variables?", o: ["bit", "boolean", "int", "Logical"], c: 1 },
+                { q: "What is the index value baseline of an array's first item?", o: ["1", "0", "-1", "any integer value"], c: 1 },
+                { q: "Which keyword is used to build classes inheritances subclasses templates structures?", o: ["implements", "extends", "inherits", "import"], c: 1 },
+                { q: "Which keyword creates constant variables whose values cannot change?", o: ["static", "const", "final", "immutable"], c: 2 },
+                { q: "What is the extension of compiled java code class files?", o: [".java", ".exe", ".class", ".jar"], c: 2 },
+                { q: "Which loop runs block operations at least once before evaluating logical constraints?", o: ["while", "for", "do-while", "foreach"], c: 2 },
+                { q: "Which statement stops loop sequences executions instantly?", o: ["continue", "exit", "return", "break"], c: 3 },
+                { q: "Which memory region holds Java dynamic object instances instantiations structures allocations?", o: ["Stack", "Heap", "Register", "Class Log"], c: 1 },
+                { q: "What is the return type of a method that does not return any data?", o: ["int", "void", "null", "empty"], c: 1 },
+                { q: "Which access modifier keeps methods visible only within their declared parent classes block boundaries?", o: ["public", "protected", "private", "package-private"], c: 2 },
+                { q: "What is the main execution entry method signature for any Java standard app runtime executable?", o: ["public static void main(String[] args)", "void main()", "public main(args)", "static void main()"], c: 0 },
+                { q: "Which mechanism handles run time anomalies errors conditions within code executions grids securely?", o: ["try-catch blocks", "if-else routing", "assert checkers", "throws flag alerts"], c: 0 }
+            ],
+            REACT: [
+                { q: "What is React?", o: ["A backend database", "A client-side UI Javascript library", "A stylesheet preprocessing framework", "A compilation operating layer"], c: 1 },
+                { q: "Who developed React framework core systems?", o: ["Google", "Apple", "Meta (Facebook)", "Twitter Devs"], c: 2 },
+                { q: "What is the syntax architecture extension wrapper format standard used inside React components?", o: ["JSON", "JSX", "TSX-Styles", "HTMLScript"], c: 1 },
+                { q: "How many elements can a valid React component return at its baseline tree roots levels?", o: ["Unlimited elements", "Exactly two", "Only one single wrapped element", "None"], c: 2 },
+                { q: "Which hook tracks states values inside standard functional components?", o: ["useEffect", "useContext", "useState", "useReducer"], c: 2 },
+                { q: "Which hook manages execution life cycle side effects inside functional components grids?", o: ["useMemo", "useEffect", "useState", "useCallback"], c: 1 },
+                { q: "What arguments arrays parameters can you supply to trigger useEffect runs strictly only once during mounting frames?", o: ["An empty array []", "A dependency list values references", "null", "No argument fields values"], c: 0 },
+                { q: "How do you pass property attributes downwards into custom React elements blocks objects structures?", o: ["Via state variables binds", "Via context wrappers layers", "Via Props", "Via global instances stores"], c: 2 },
+                { q: "Props parameters parameters read-only unmodifiable configurations inside child components structures.", o: ["True", "False"], c: 0 },
+                { q: "What is the key purpose of supplying unique 'key' props values within listed items loops grids?", o: ["To append styling configurations classes variables", "To help React optimize DOM diff tracking updates cycles logs", "To secure values datasets encryption keys", "To define array indexes pointers explicitly"], c: 1 },
+                { q: "Which hook fetches values outputs distributed via Context Provider layers interfaces directly?", o: ["useProvider", "useContext", "useReducer", "useState"], c: 1 },
+                { q: "What custom tool can wrap components groups trees grids to prevent errors collapses across applications layouts grids?", o: ["ErrorBoundary block wrapper classes", "try-catch closures panels", "Suspense boundaries indicators", "Safeview panels"], c: 0 },
+                { q: "What is the default port number configuration used by local Vite React dev server configurations frameworks setups?", o: ["3000", "8080", "5173", "5000"], c: 2 },
+                { q: "What function changes states values arrays sets targeted via standard useState initialization pairs?", o: ["The secondary returned setter reference function method", "this.setState() methods", "Direct mutate re-assignments updates loops", "forceUpdate() wrappers triggers"], c: 0 },
+                { q: "React virtual DOM layers architectures boost performance efficiency by avoiding direct slower real DOM reflow computations.", o: ["True", "False"], c: 0 },
+                { q: "Which hook caches computed heavy operational execution value results without triggering redundant recalculations processes?", o: ["useCallback", "useMemo", "useRef", "useEffect"], c: 1 },
+                { q: "Which hook holds mutable structural data reference indicators objects that don't trigger re-renders routines updates during changes?", o: ["useRef", "useState", "useId", "useLayoutEffect"], c: 0 },
+                { q: "What is standard standard packaging engine layout structures used to lazily defer code split assets modules loadings patterns?", o: ["React.lazy() combined with Suspense components", "Webpack inline bundling scripts", "Dynamic imports closures wrappers", "Vite split actions"], c: 0 },
+                { q: "What design pattern framework provides seamless localized parameters values bindings routing across custom single-page components routes architectures?", o: ["React Router modules packages", "Axios client engines", "Redux systems logs stores", "Context routers standard"], c: 0 },
+                { q: "Strict Mode execution utilities blocks run side effect callbacks functions twice during local developer debugging runs frames checks.", o: ["True", "False"], c: 0 }
+            ]
+        };
+
+        // App States parameters variables trackers configuration
+        let selectedCategory = '';
+        let userName = '';
+        let userPhone = '';
+        let activeQuestions = [];
+        let currentIndex = 0;
+        let score = 0;
+        let chosenAnswerIndex = null;
+
+        // Binding Dom IDs components elements wrappers hooks references
+        const scrCategory = document.getElementById('screen-category');
+        const scrLogin = document.getElementById('screen-login');
+        const scrQuiz = document.getElementById('screen-quiz');
+        const scrResult = document.getElementById('screen-result');
+        const badge = document.getElementById('quiz-badge');
+        const pBar = document.getElementById('progress-bar');
+        const pContainer = document.getElementById('progress-container');
+        const qFooter = document.getElementById('quiz-footer');
+        
+        const qText = document.getElementById('question-text');
+        const optBox = document.getElementById('options-box');
+        const trackerText = document.getElementById('tracker-counter');
+        const nextBtn = document.getElementById('next-btn');
+        const confettiWrapper = document.getElementById('confetti-wrapper');
+
+        function selectCategory(cat) {
+            selectedCategory = cat;
+            activeQuestions = megaQuestionBank[cat];
+            
+            // Switch screen step views configurations
+            scrCategory.classList.add('hidden');
+            scrLogin.classList.remove('hidden');
+            badge.innerText = `Topic: ${cat}`;
+            badge.classList.remove('hidden');
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            userName = document.getElementById('user-name').value.trim();
+            userPhone = document.getElementById('user-phone').value.trim();
+
+            scrLogin.classList.add('hidden');
+            scrQuiz.classList.remove('hidden');
+            pContainer.classList.remove('hidden');
+            qFooter.classList.remove('hidden');
+
+            currentIndex = 0;
+            score = 0;
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            chosenAnswerIndex = null;
+            nextBtn.disabled = true;
+            
+            const currentItem = activeQuestions[currentIndex];
+            qText.innerHTML = `${currentIndex + 1}. ${currentItem.q}`;
+            trackerText.innerText = `Question ${currentIndex + 1} of 20`;
+            
+            // Update Top layout linear stats index progression line values
+            const percent = ((currentIndex + 1) / 20) * 100;
+            pBar.style.width = `${percent}%`;
+
+            optBox.innerHTML = '';
+            currentItem.o.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left p-4 rounded-xl border border-slate-700 bg-slate-700/50 hover:bg-slate-700 hover:border-slate-500 transition font-medium flex justify-between items-center outline-none";
+                btn.innerHTML = `<span>${opt}</span><i class="far fa-circle text-slate-500"></i>`;
+                btn.onclick = () => selectOption(idx, btn);
+                optBox.appendChild(btn);
+            });
+
+            if (currentIndex === 19) {
+                nextBtn.innerHTML = `Submit Test <i class="fas fa-check-double text-xs ml-1"></i>`;
+            } else {
+                nextBtn.innerHTML = `Next Question <i class="fas fa-arrow-right text-xs ml-1"></i>`;
+            }
+        }
+
+        function selectOption(idx, element) {
+            chosenAnswerIndex = idx;
+            nextBtn.disabled = false;
+
+            const allBtns = optBox.querySelectorAll('button');
+            allBtns.forEach(b => {
+                b.className = "w-full text-left p-4 rounded-xl border border-slate-700 bg-slate-700/50 hover:bg-slate-700 hover:border-slate-500 transition font-medium flex justify-between items-center outline-none";
+                b.querySelector('i').className = "far fa-circle text-slate-500";
+            });
+
+            // Highlight chosen buttons configurations rings parameters colors styles options
+            element.className = "w-full text-left p-4 rounded-xl border-indigo-500 bg-indigo-600/20 transition font-medium flex justify-between items-center outline-none ring-2 ring-indigo-500/50 text-white";
+            element.querySelector('i').className = "fas fa-check-circle text-indigo-400";
+        }
+
+        function navigateNext() {
+            if (chosenAnswerIndex === null) return;
+
+            // Increment computed metrics scores
+            if (chosenAnswerIndex === activeQuestions[currentIndex].c) {
+                score++;
+            }
+
+            if (currentIndex < 19) {
+                currentIndex++;
+                loadQuestion();
+            } else {
+                renderFinalResults();
+            }
+        }
+
+        function renderFinalResults() {
+            scrQuiz.classList.add('hidden');
+            pContainer.classList.add('hidden');
+            qFooter.classList.add('hidden');
+            badge.classList.add('hidden');
+            scrResult.classList.remove('hidden');
+
+            document.getElementById('result-user-info').innerText = `🎉 Job Well Done, ${userName}!`;
+            document.getElementById('score-earned').innerText = score;
+
+            // Compute feedback summaries notes
+            const feedbackText = document.getElementById('score-feedback');
+            if (score >= 16) {
+                feedbackText.innerText = "⭐ Exceptional Skill Matrix! You have highly masterminded this domain area perfectly.";
+                triggerConfettiEffect();
+            } else if (score >= 10) {
+                feedbackText.innerText = "👍 Commendable Performance! Good grasp of foundational values parameters structures.";
+            } else {
+                feedbackText.innerText = "📚 Needs Improvement. We recommend reviewing course revision summary sheets logs modules.";
+            }
+        }
+
+        function triggerConfettiEffect() {
+            confettiWrapper.classList.remove('hidden');
+            confettiWrapper.innerHTML = '';
+            for (let i = 0; i < 60; i++) {
+                const conf = document.createElement('div');
+                conf.className = 'confetti';
+                conf.style.left = Math.random() * 100 + 'vw';
+                conf.style.animationDelay = Math.random() * 2 + 's';
+                conf.style.backgroundColor = ['#f43f5e', '#3b82f6', '#10b981', '#eab308', '#a855f7'][Math.floor(Math.random() * 5)];
+                confettiWrapper.appendChild(conf);
+            }
+            setTimeout(() => { confettiWrapper.classList.add('hidden'); }, 6000);
+        }
+
+        function resetApp() {
+            document.getElementById('login-form').reset();
+            scrResult.classList.add('hidden');
+            scrCategory.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
